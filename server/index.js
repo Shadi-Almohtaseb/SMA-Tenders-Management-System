@@ -377,6 +377,128 @@ app.delete("/api/attachments/:id", authenticate, async (req, res) => {
   }
 });
 
+app.get("/api/notifications/expiring", authenticate, async (req, res) => {
+  try {
+    const daysThreshold = parseInt(req.query.days) || 5;
+    
+    const expiringTenders = await db
+      .select()
+      .from(schema.tenders)
+      .where(
+        sql`
+          (DATE(${schema.tenders.guaranteeExpiryDate}) - CURRENT_DATE) >= 0
+          AND (DATE(${schema.tenders.guaranteeExpiryDate}) - CURRENT_DATE) <= ${daysThreshold}
+        `
+      )
+      .orderBy(sql`DATE(${schema.tenders.guaranteeExpiryDate})`);
+
+    const result = expiringTenders.map((tender) => {
+      const expiryDate = new Date(tender.guaranteeExpiryDate);
+      const today = new Date();
+      const daysUntilExpiry = Math.ceil(
+        (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      return {
+        ...tender,
+        daysUntilExpiry,
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching expiring tenders:", error);
+    res.status(500).json({ error: "Failed to fetch expiring tenders" });
+  }
+});
+
+app.post("/api/notifications/send-email", authenticate, async (req, res) => {
+  try {
+    const { recipientEmail, subject, tenderInfo } = req.body;
+    
+    if (!recipientEmail || !subject || !tenderInfo) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    console.log("📧 Email notification would be sent to:", recipientEmail);
+    console.log("Subject:", subject);
+    console.log("Tender:", tenderInfo);
+    
+    res.json({ 
+      success: true,
+      message: "Email notification logged. To enable actual email sending, please set up an email service (e.g., Resend, SendGrid) and configure SMTP credentials.",
+      recipientEmail,
+      subject
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
+app.get("/api/tenders/export/pdf", authenticate, async (req, res) => {
+  try {
+    const PDFDocument = require("pdfkit");
+    const allTenders = await db.select().from(schema.tenders).orderBy(desc(schema.tenders.createdAt));
+    
+    const doc = new PDFDocument({ margin: 50 });
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=tenders-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    doc.pipe(res);
+    
+    doc.fontSize(20).text('Tenders Report', { align: 'center' });
+    doc.fontSize(12).text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })}`, { align: 'center' });
+    doc.moveDown(2);
+    
+    doc.fontSize(14).text(`Total Tenders: ${allTenders.length}`, { underline: true });
+    doc.moveDown(1);
+    
+    allTenders.forEach((tender, index) => {
+      if (doc.y > 700) {
+        doc.addPage();
+      }
+      
+      doc.fontSize(12).text(`${index + 1}. Owner Entity: ${tender.ownerEntity}`, { bold: true });
+      doc.fontSize(10).text(`   Opening Date: ${tender.openingDate}`);
+      doc.fontSize(10).text(`   Guarantee Amount: ${parseFloat(tender.guaranteeAmount).toLocaleString('en-US', { style: 'currency', currency: 'SAR' })}`);
+      doc.fontSize(10).text(`   Guarantee Expiry: ${tender.guaranteeExpiryDate}`);
+      doc.fontSize(10).text(`   Status: ${tender.status}`);
+      
+      if (tender.awardedCompany) {
+        doc.fontSize(10).text(`   Awarded Company: ${tender.awardedCompany}`);
+      }
+      
+      if (tender.notes) {
+        doc.fontSize(10).text(`   Notes: ${tender.notes.substring(0, 100)}${tender.notes.length > 100 ? '...' : ''}`);
+      }
+      
+      doc.moveDown(0.5);
+    });
+    
+    const totalGuaranteeAmount = allTenders.reduce((sum, t) => sum + parseFloat(t.guaranteeAmount), 0);
+    const awardedCount = allTenders.filter(t => t.status === 'awarded').length;
+    const underReviewCount = allTenders.filter(t => t.status === 'under_review').length;
+    
+    doc.addPage();
+    doc.fontSize(16).text('Summary Statistics', { underline: true });
+    doc.moveDown(1);
+    doc.fontSize(12).text(`Total Guarantee Amount: ${totalGuaranteeAmount.toLocaleString('en-US', { style: 'currency', currency: 'SAR' })}`);
+    doc.fontSize(12).text(`Awarded Tenders: ${awardedCount}`);
+    doc.fontSize(12).text(`Under Review: ${underReviewCount}`);
+    
+    doc.end();
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    res.status(500).json({ error: "Failed to generate PDF report" });
+  }
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });

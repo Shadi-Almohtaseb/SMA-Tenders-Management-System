@@ -24,9 +24,9 @@ export class ApiClient {
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (this.token) {
@@ -118,6 +118,34 @@ export class ApiClient {
     }
 
     return response.json();
+  }
+
+  async getExpiringTenders(days: number = 5) {
+    return this.request(`/notifications/expiring?days=${days}`);
+  }
+
+  async sendEmailNotification(recipientEmail: string, subject: string, tenderInfo: any) {
+    return this.request("/notifications/send-email", {
+      method: "POST",
+      body: JSON.stringify({ recipientEmail, subject, tenderInfo }),
+    });
+  }
+
+  async exportTendersPDF() {
+    const headers: HeadersInit = {};
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(`${API_URL}/tenders/export/pdf`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.blob();
   }
 }
 

@@ -120,6 +120,32 @@ class ApiClient {
         }
         return response.json();
     }
+    async getExpiringTenders(days = 5) {
+        return this.request(`/notifications/expiring?days=${days}`);
+    }
+    async sendEmailNotification(recipientEmail, subject, tenderInfo) {
+        return this.request("/notifications/send-email", {
+            method: "POST",
+            body: JSON.stringify({
+                recipientEmail,
+                subject,
+                tenderInfo
+            })
+        });
+    }
+    async exportTendersPDF() {
+        const headers = {};
+        if (this.token) {
+            headers["Authorization"] = `Bearer ${this.token}`;
+        }
+        const response = await fetch(`${API_URL}/tenders/export/pdf`, {
+            headers
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.blob();
+    }
 }
 const api = new ApiClient();
 }),

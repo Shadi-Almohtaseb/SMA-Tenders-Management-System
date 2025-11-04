@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { Pencil, Trash2, Search } from "lucide-react";
+import { Pencil, Trash2, Search, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -85,11 +85,32 @@ export function TendersDashboard({ tenders, onUpdate }: TendersDashboardProps) {
     }
   };
 
+  const handleExportPDF = async () => {
+    try {
+      const blob = await api.exportTendersPDF();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tenders-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("حدث خطأ أثناء تصدير التقرير");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl">لوحة العطاءات</CardTitle>
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2">
+            <FileDown className="h-4 w-4" />
+            تصدير PDF
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -142,7 +163,7 @@ export function TendersDashboard({ tenders, onUpdate }: TendersDashboardProps) {
                     <tr
                       key={tender.id}
                       className={`border-b transition-colors ${getTenderStatusColor(
-                        tender.status
+                        tender.status as any
                       )}`}
                     >
                       <td className="p-3 font-medium">{tender.ownerEntity}</td>
@@ -163,7 +184,7 @@ export function TendersDashboard({ tenders, onUpdate }: TendersDashboardProps) {
                               : "destructive"
                           }
                         >
-                          {getTenderStatusLabel(tender.status)}
+                          {getTenderStatusLabel(tender.status as any)}
                         </Badge>
                       </td>
                       <td className="p-3 text-sm">

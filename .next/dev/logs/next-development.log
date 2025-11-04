@@ -1,42 +1,4 @@
-[00:00:05.667] Server  LOG      ✓ Ready in 4.6s
-[00:00:08.688] Server  LOG      ○ Compiling / ...
-[00:00:19.609] Server  WARN     ⚠ Cross origin request detected from 99ae5883-4d90-4a31-b272-bee04a9a5664-00-2ocmishh7q8aw.kirk.replit.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+[00:00:01.342] Server  LOG      ✓ Ready in 820ms
+[00:00:04.551] Server  LOG      ○ Compiling / ...
+[00:00:08.955] Server  WARN     ⚠ Cross origin request detected from 9e1cb97f-db5a-4856-b99e-f95bd464c1f2-00-13a4jqqp3n64f.kirk.replit.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
 Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
-[00:00:19.958] Browser ERROR   A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
-
-- A server/client branch `if (typeof window !== 'undefined')`.
-- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
-- Date formatting in a user's locale which doesn't match the server.
-- External changing data without sending a snapshot of it along with the HTML.
-- Invalid HTML tag nesting.
-
-It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
-
-%s%s https://react.dev/link/hydration-mismatch 
-
-  ...
-    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
-      <AppDevOverlayErrorBoundary globalError={[...]}>
-        <ReplaySsrOnlyErrors>
-        <DevRootHTTPAccessFallbackBoundary>
-          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
-            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
-              <RedirectBoundary>
-                <RedirectErrorBoundary router={{...}}>
-                  <Head>
-                  <__next_root_layout_boundary__>
-                    <SegmentViewNode type="layout" pagePath="layout.tsx">
-                      <SegmentTrieNode>
-                      <link>
-                      <script>
-                      <script>
-                      <RootLayout>
-                        <html lang="ar" dir="rtl">
-                          <body
-                            className="antialiased min-h-screen bg-gray-50"
--                           __processed_5f30bb91-1c91-4cde-8c04-50add1402c42__="true"
--                           data-new-gr-c-s-check-loaded="14.1260.0"
--                           data-gr-ext-installed=""
-                          >
-                  ...
-
