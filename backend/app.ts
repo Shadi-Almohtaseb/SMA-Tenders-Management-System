@@ -1,34 +1,74 @@
-import { Request, Response } from "express";
+import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-dotenv.config();
-import express from 'express'
-import cookieParser from 'cookie-parser'
-import "reflect-metadata"
-import { customErrorHandler, DefaultErrorHandler } from "./src/middleware/errorHandlers.js";
-import fileUpload from "express-fileupload";
+import cookieParser from 'cookie-parser';
+import fileUpload from 'express-fileupload';
 import cors from 'cors';
+import mongoose from 'mongoose';
+import router from './src/routes/index.js';
+import {
+  customErrorHandler,
+  DefaultErrorHandler,
+} from './src/middleware/errorHandlers.js';
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 5000;
+
+/* -------------------- Middlewares -------------------- */
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-    origin: '*',
-    credentials: true,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 } }))
+app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 } }));
 app.use(cookieParser());
 
-app.use(customErrorHandler)
-app.use(DefaultErrorHandler)
-
-app.get("/", (req: Request, res: Response) => {
-    res.send('Server UP!');
-})
-
-app.listen(PORT, () => {
-    console.log(`App is running and listening on host http://localhost:${PORT}`);
+/* -------------------- Routes -------------------- */
+app.get('/', (req: Request, res: Response) => {
+  res.send('Server UP!');
 });
+
+app.use('/', router());
+
+/* -------------------- Error Handlers (LAST) -------------------- */
+app.use(customErrorHandler);
+app.use(DefaultErrorHandler);
+
+/* -------------------- DB + Server Bootstrap -------------------- */
+async function startServer() {
+  try {
+    mongoose.set('strictQuery', true);
+    mongoose.set('bufferCommands', false);
+
+    await mongoose.connect(process.env.MONGO_URI as string, {
+      dbName: 'sma-tenders',
+    });
+
+    console.log('✅ MongoDB connected (Mongoose)');
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;

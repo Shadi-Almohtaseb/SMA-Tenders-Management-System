@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Filter, Grid, List } from 'lucide-react';
 import type { Tender } from '@/shared/types';
 import TenderTable from '@/components/page-components/TenderTable';
@@ -6,6 +6,7 @@ import TenderCard from '@/components/page-components/TenderCard';
 import Button from '@/components/shared-components/Button';
 import Input from '@/components/shared-components/Input';
 import Select from '@/components/shared-components/Select';
+import { fetchTenders } from '@/api/tenders';
 
 interface TendersProps {
   tenders: Tender[];
@@ -18,6 +19,12 @@ const Tenders = ({ tenders, onEditTender, onDeleteTender }: TendersProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_desc');
+
+  useEffect(() => {
+    fetchTenders().then((data) => {
+      console.log('Fetched tenders:', data);
+    });
+  }, [])
 
   const statusOptions = [
     { value: 'all', label: 'جميع الحالات' },
